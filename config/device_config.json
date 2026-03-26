@@ -1,0 +1,40 @@
+{
+  "host": "0.0.0.0",
+  "port": 5000,
+
+  "camera": {
+    "led_gpio": 16,
+    "active_low": false,
+    "warmup_sec": 1.0,
+    "read_interval_s": 30.0,
+    "image_root": "runs/images",
+    "log_root": "runs/logs",
+    "coords_file": "data/coordinates.json"
+  },
+
+  "heater": {
+    "gpio": 24,
+    "pwm_freq": 100.0,
+    "cycle": 0.10,
+    "off_ms": 0,
+    "samples": 3,
+    "sample_every": 5,
+    "kp": 12.0,
+    "ki": 0.05,
+    "kd": 0.10,
+    "cutoff": 110.0,
+    "ema": 0.30,
+    "addr": "0x5A",
+    "i2c_hz": 100000,
+    "emiss": 1.0,
+    "verbose": false,
+    "burst": false,
+    "min_duty": 30.0,
+    "duty_cap": 100.0,
+    "v_supply": 12.0,
+    "r_heater": 6.0,
+    "pmax": null,
+    "imax": null,
+    "slew": 999.0
+  }
+}

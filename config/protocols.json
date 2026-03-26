@@ -1,0 +1,28 @@
+{
+  "protocols": [
+    {
+      "id": "lamp45",
+      "name": "LAMP · 65 °C · 45 min",
+      "temperature_c": 65,
+      "duration_min": 45,
+      "warmup_min": 1,
+      "read_interval_s": 30
+    },
+    {
+      "id": "lamp30",
+      "name": "LAMP · 65 °C · 30 min",
+      "temperature_c": 65,
+      "duration_min": 30,
+      "warmup_min": 1,
+      "read_interval_s": 30
+    },
+    {
+      "id": "rpa25",
+      "name": "RPA · 39 °C · 25 min",
+      "temperature_c": 39,
+      "duration_min": 25,
+      "warmup_min": 1,
+      "read_interval_s": 20
+    }
+  ]
+}

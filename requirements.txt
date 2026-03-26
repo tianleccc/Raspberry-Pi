@@ -1,0 +1,7 @@
+flask
+numpy
+opencv-python
+picamera2
+gpiozero
+lgpio
+adafruit-circuitpython-mlx90614

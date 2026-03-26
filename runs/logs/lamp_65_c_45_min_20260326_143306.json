@@ -1,0 +1,110 @@
+{
+  "running": true,
+  "run_id": "lamp_65_c_45_min_20260326_143306",
+  "protocol": {
+    "id": "lamp45",
+    "name": "LAMP · 65 °C · 45 min",
+    "temperature_c": 65,
+    "duration_min": 45,
+    "warmup_min": 1,
+    "read_interval_s": 30
+  },
+  "frames_captured": 2,
+  "last_file": "0002_20260326_143339.jpg",
+  "current_time_min": 0.5,
+  "current_temp_c": null,
+  "heater_status": "idle",
+  "assay_status": "stopping",
+  "chambers": [
+    {
+      "chamber_id": 1,
+      "t_all": [
+        0.0,
+        0.5
+      ],
+      "corrected_display": [
+        0.0,
+        0.0
+      ],
+      "status_text": "warm-up",
+      "threshold_time": null,
+      "completion_time": null,
+      "confirmed": false,
+      "rejected_segments": 0
+    },
+    {
+      "chamber_id": 2,
+      "t_all": [
+        0.0,
+        0.5
+      ],
+      "corrected_display": [
+        0.0,
+        0.0
+      ],
+      "status_text": "warm-up",
+      "threshold_time": null,
+      "completion_time": null,
+      "confirmed": false,
+      "rejected_segments": 0
+    },
+    {
+      "chamber_id": 3,
+      "t_all": [
+        0.0,
+        0.5
+      ],
+      "corrected_display": [
+        0.0,
+        0.0
+      ],
+      "status_text": "warm-up",
+      "threshold_time": null,
+      "completion_time": null,
+      "confirmed": false,
+      "rejected_segments": 0
+    },
+    {
+      "chamber_id": 4,
+      "t_all": [
+        0.0,
+        0.5
+      ],
+      "corrected_display": [
+        0.0,
+        0.0
+      ],
+      "status_text": "warm-up",
+      "threshold_time": null,
+      "completion_time": null,
+      "confirmed": false,
+      "rejected_segments": 0
+    },
+    {
+      "chamber_id": 5,
+      "t_all": [
+        0.0,
+        0.5
+      ],
+      "corrected_display": [
+        0.0,
+        0.0
+      ],
+      "status_text": "warm-up",
+      "threshold_time": null,
+      "completion_time": null,
+      "confirmed": false,
+      "rejected_segments": 0
+    }
+  ],
+  "log": [
+    "[14:33:06] Run created: lamp_65_c_45_min_20260326_143306",
+    "[14:33:06] Image folder: runs/images/lamp_65_c_45_min_20260326_143306",
+    "[14:33:08] Protocol loaded: LAMP · 65 °C · 45 min",
+    "[14:33:16] Frame 001 captured: 0001_20260326_143309.jpg",
+    "[14:33:44] Frame 002 captured: 0002_20260326_143339.jpg",
+    "[14:33:54] Stop requested"
+  ],
+  "image_dir": "runs/images/lamp_65_c_45_min_20260326_143306",
+  "log_file": "runs/logs/lamp_65_c_45_min_20260326_143306.json"
+}
