@@ -62,14 +62,16 @@ class CameraService:
 
     def capture(self, image_dir: str, index: int, warmup_sec: float):
         self.led_on()
-        time.sleep(max(0.0, warmup_sec))
+        try:
+            time.sleep(max(0.0, warmup_sec))
 
-        filename = f"{index:04d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-        path = os.path.join(image_dir, filename)
-        self.cam.capture_file(path)
+            filename = f"{index:04d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            path = os.path.join(image_dir, filename)
+            self.cam.capture_file(path)
 
-        self.led_off()
-        return path, filename
+            return path, filename
+        finally:
+            self.led_off()
 
     def stop(self):
         try:
@@ -81,6 +83,13 @@ class CameraService:
                 self.cam.stop()
         except Exception:
             pass
+        try:
+            if self.cam:
+                self.cam.close()
+        except Exception:
+            pass
+        self.cam = None
+        time.sleep(0.5)
         try:
             self.led.close()
         except Exception:
