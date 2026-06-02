@@ -57,6 +57,8 @@ def create_experiment_blueprint(device_cfg, analysis_cfg, protocol_service, stat
 
         def worker():
             camera = None
+            analysis = None
+            completed_all_frames = False
             try:
                 coords_file = device_cfg["camera"]["coords_file"]
                 analysis = AnalysisService(analysis_cfg, coords_file)
@@ -97,11 +99,18 @@ def create_experiment_blueprint(device_cfg, analysis_cfg, protocol_service, stat
                     if idx < total_frames and sleep_left > 0:
                         time.sleep(sleep_left)
 
+                completed_all_frames = not stop_event.is_set()
+                if completed_all_frames:
+                    analysis.finalize()
+                    state_manager.update_chambers(analysis.get_state())
+                    state_manager.update_assay_status("finished")
+                    state_manager.add_log("Experiment finished")
+                else:
+                    state_manager.update_assay_status("stopped")
+                    state_manager.add_log("Experiment stopped before final result")
+
                 with open(log_file, "w", encoding="utf-8") as f:
                     json.dump(state_manager.snapshot(), f, indent=2, ensure_ascii=False)
-
-                state_manager.update_assay_status("finished")
-                state_manager.add_log("Experiment finished")
 
             except Exception as e:
                 state_manager.update_assay_status("error")

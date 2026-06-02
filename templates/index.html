@@ -313,6 +313,70 @@
       letter-spacing: -0.02em;
     }
 
+    .final-panel {
+      padding: 20px;
+    }
+
+    .final-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .final-head h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .final-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .final-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .result-card {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(247, 251, 255, 0.86);
+      min-height: 118px;
+    }
+
+    .result-card .chamber {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .result-card .call {
+      font-size: 22px;
+      font-weight: 760;
+      margin-bottom: 8px;
+      text-transform: capitalize;
+    }
+
+    .result-card .detail {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .result-card.positive .call { color: var(--success); }
+    .result-card.negative .call { color: #6f89a5; }
+    .result-card.rejected .call { color: var(--danger); }
+    .result-card.pending .call { color: var(--accent); }
+
     /* 只改这里：让 chart 和 table 并排 */
     .results-row {
       display: grid;
@@ -418,6 +482,7 @@
       .main-grid { grid-template-columns: 1fr; }
       .control-panel { position: static; }
       .metric-grid { grid-template-columns: repeat(2, 1fr); }
+      .final-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .results-row { grid-template-columns: 1fr; }
     }
 
@@ -425,6 +490,7 @@
       .shell { padding: 18px; }
       .topbar { flex-direction: column; }
       .metric-grid { grid-template-columns: 1fr; }
+      .final-grid { grid-template-columns: 1fr; }
       .btn-row { grid-template-columns: 1fr; }
       .protocol-summary { grid-template-columns: 1fr; }
       .chart-shell { height: 320px; }
@@ -550,6 +616,16 @@
             <div class="k">Assay status</div>
             <div class="v" id="metric-status">idle</div>
           </div>
+        </div>
+
+        <div class="panel final-panel">
+          <div class="final-head">
+            <div>
+              <h2>Final Result</h2>
+              <p id="final-summary">Waiting for assay completion.</p>
+            </div>
+          </div>
+          <div id="final-result-grid" class="final-grid"></div>
         </div>
 
         <!-- 只改这里：chart 和 table 放到同一行 -->

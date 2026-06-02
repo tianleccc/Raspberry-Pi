@@ -159,6 +159,7 @@ function updateStateUI(state) {
   const confirmed = (state.chambers || []).filter(c => c.confirmed).length;
   const total = (state.chambers || []).length;
   setText("metric-detected", `${confirmed} / ${total}`);
+  updateFinalResults(state);
 
   const logBox = document.getElementById("log-box");
   if (logBox) {
@@ -178,7 +179,7 @@ function updateStateUI(state) {
       tr.innerHTML = `
         <td>${ch.chamber_id}</td>
         <td>${ch.status_text}</td>
-        <td>${ch.threshold_time == null ? "—" : ch.threshold_time.toFixed(1) + " min"}</td>
+        <td>${ch.tt_display_min == null ? "—" : ch.tt_display_min.toFixed(1) + " min"}</td>
         <td>${latest}</td>
       `;
       tbody.appendChild(tr);
@@ -191,6 +192,58 @@ function updateStateUI(state) {
 
   if (typeof updateTopStatus === "function") {
     updateTopStatus(state);
+  }
+}
+
+function formatResultCall(call) {
+  if (call === "positive") return "Positive";
+  if (call === "negative") return "Negative";
+  if (call === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function updateFinalResults(state) {
+  const grid = document.getElementById("final-result-grid");
+  if (!grid) return;
+
+  const chambers = state.chambers || [];
+  const status = state.assay_status || "idle";
+  const finalReady = status === "finished";
+
+  if (!chambers.length) {
+    grid.innerHTML = "";
+    setText("final-summary", "Waiting for chamber data.");
+    return;
+  }
+
+  const positives = chambers.filter(ch => ch.final_call === "positive").length;
+  const negatives = chambers.filter(ch => ch.final_call === "negative").length;
+  const rejected = chambers.filter(ch => ch.final_call === "rejected").length;
+
+  if (finalReady) {
+    setText("final-summary", `${positives} positive, ${negatives} negative, ${rejected} rejected`);
+  } else if (status === "stopped") {
+    setText("final-summary", "Run stopped before final result.");
+  } else {
+    setText("final-summary", "Final calls update after the assay finishes.");
+  }
+
+  grid.innerHTML = "";
+  for (const ch of chambers) {
+    const call = ch.final_call || "pending";
+    const tt = ch.tt_display_min == null ? "-" : `${ch.tt_display_min.toFixed(1)} min`;
+    const completion = ch.completion_time == null ? "-" : `${ch.completion_time.toFixed(1)} min`;
+
+    const card = document.createElement("div");
+    card.className = `result-card ${call}`;
+    card.innerHTML = `
+      <div class="chamber">Chamber ${ch.chamber_id}</div>
+      <div class="call">${formatResultCall(call)}</div>
+      <div class="detail">Tt: ${tt}</div>
+      <div class="detail">Completion: ${completion}</div>
+      <div class="detail">Rejected segments: ${ch.rejected_segments || 0}</div>
+    `;
+    grid.appendChild(card);
   }
 }
 

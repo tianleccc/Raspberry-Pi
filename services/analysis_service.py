@@ -65,6 +65,9 @@ class ChamberState:
     neg_slope_end: float
     min_net_rise: float
     reject_flatten_value: float
+    zero_reject_frac: float
+    zero_reject_abs: float
+    zero_reject_consec: int
 
     t_all: list = field(default_factory=list)
     raw_all: list = field(default_factory=list)
@@ -88,7 +91,10 @@ class ChamberState:
     completion_time: float = np.nan
     confirmed: bool = False
     rejected_segments: int = 0
+    peak_after_confirm: float = 0.0
+    low_after_confirm_count: int = 0
     status_text: str = "warm-up"
+    final_call: str = "pending"
 
     def _estimate_thresholds(self):
         if self.noise_ready:
@@ -115,8 +121,30 @@ class ChamberState:
             self.status_text = "searching"
 
     def _flatten_rejected_segment(self, start_idx: int, end_idx: int):
+        start_idx = max(0, start_idx)
+        end_idx = min(end_idx, len(self.corrected_display) - 1)
         for j in range(start_idx, end_idx + 1):
             self.corrected_display[j] = self.reject_flatten_value
+
+    def _reject_current_event(self, start_idx: int, end_idx: int):
+        self._flatten_rejected_segment(start_idx, end_idx)
+
+        self.threshold_time = np.nan
+        self.completion_time = np.nan
+        self.confirmed = False
+        self.peak_after_confirm = 0.0
+        self.low_after_confirm_count = 0
+
+        self.candidate_start_idx = None
+        self.candidate_end_idx = None
+        self.rise_reference_slope = None
+        self.rise_count = 0
+        self.end_count = 0
+
+        self.rejected_segments += 1
+        self.state = "SEARCH"
+        self.status_text = f"rejected x{self.rejected_segments}"
+        self.final_call = "rejected"
 
     def update(self, t_min: float, raw_value: float):
         self.t_all.append(float(t_min))
@@ -157,7 +185,25 @@ class ChamberState:
 
         if self.confirmed:
             self.state = "CONFIRMED"
-            self.status_text = f"confirmed @ {self.threshold_time:.1f} min"
+            self.peak_after_confirm = max(self.peak_after_confirm, corrected)
+
+            low_threshold = max(
+                self.zero_reject_abs,
+                self.zero_reject_frac * self.peak_after_confirm
+            )
+
+            if corrected <= low_threshold:
+                self.low_after_confirm_count += 1
+            else:
+                self.low_after_confirm_count = 0
+
+            if self.low_after_confirm_count >= self.zero_reject_consec:
+                start_idx = self.candidate_start_idx if self.candidate_start_idx is not None else 0
+                end_idx = len(self.corrected_display) - 1
+                self._reject_current_event(start_idx, end_idx)
+            else:
+                self.status_text = f"confirmed @ {self.threshold_time:.1f} min"
+                self.final_call = "positive"
             return
 
         if self.state in ("SEARCH", "WARMUP"):
@@ -211,29 +257,55 @@ class ChamberState:
                     self.confirmed = True
                     self.state = "CONFIRMED"
                     self.status_text = f"confirmed @ {self.threshold_time:.1f} min"
+                    self.peak_after_confirm = self.corrected_all[end_idx]
+                    self.low_after_confirm_count = 0
+                    self.final_call = "positive"
                 else:
-                    self._flatten_rejected_segment(start_idx, end_idx)
-                    self.rejected_segments += 1
-                    self.candidate_start_idx = None
-                    self.candidate_end_idx = None
-                    self.rise_reference_slope = None
-                    self.rise_count = 0
-                    self.end_count = 0
-                    self.state = "SEARCH"
-                    self.status_text = f"rejected x{self.rejected_segments}"
+                    self._reject_current_event(start_idx, end_idx)
             else:
                 self.status_text = "tracking rise"
 
+    def finalize(self):
+        if np.isfinite(self.threshold_time):
+            self.final_call = "positive"
+            return
+
+        if self.state == "TRACK" and self.candidate_start_idx is not None:
+            start_idx = self.candidate_start_idx
+            end_idx = len(self.corrected_all) - 1
+
+            net_rise = self.corrected_all[end_idx] - self.corrected_all[start_idx]
+            duration = self.t_all[end_idx] - self.t_all[start_idx]
+
+            if net_rise >= self.min_net_rise and duration >= self.min_rise_duration_min:
+                self.threshold_time = self.t_all[start_idx]
+                self.completion_time = np.nan
+                self.confirmed = True
+                self.final_call = "positive"
+                self.status_text = f"confirmed at end @ {self.threshold_time:.1f} min"
+                return
+
+        self.final_call = "negative"
+        self.status_text = "negative"
+
     def to_dict(self):
+        threshold_time = None if not np.isfinite(self.threshold_time) else float(self.threshold_time)
+        completion_time = None if not np.isfinite(self.completion_time) else float(self.completion_time)
+        tt_display = None if threshold_time is None else max(0.0, threshold_time - self.warmup_min)
+
         return {
             "chamber_id": self.chamber_id,
             "t_all": self.t_all,
             "corrected_display": self.corrected_display,
             "status_text": self.status_text,
-            "threshold_time": None if not np.isfinite(self.threshold_time) else float(self.threshold_time),
-            "completion_time": None if not np.isfinite(self.completion_time) else float(self.completion_time),
+            "threshold_time": threshold_time,
+            "completion_time": completion_time,
+            "tt_display_min": tt_display,
             "confirmed": self.confirmed,
-            "rejected_segments": self.rejected_segments
+            "final_call": self.final_call,
+            "rejected_segments": self.rejected_segments,
+            "start_amp_threshold": None if not np.isfinite(self.start_amp_threshold) else float(self.start_amp_threshold),
+            "start_slope_threshold": None if not np.isfinite(self.start_slope_threshold) else float(self.start_slope_threshold)
         }
 
 
@@ -259,7 +331,10 @@ class AnalysisService:
                 end_slope_fraction=float(self.cfg["end_slope_fraction"]),
                 neg_slope_end=float(self.cfg["neg_slope_end"]),
                 min_net_rise=float(self.cfg["min_net_rise"]),
-                reject_flatten_value=float(self.cfg["reject_flatten_value"])
+                reject_flatten_value=float(self.cfg["reject_flatten_value"]),
+                zero_reject_frac=float(self.cfg["zero_reject_frac"]),
+                zero_reject_abs=float(self.cfg["zero_reject_abs"]),
+                zero_reject_consec=int(self.cfg["zero_reject_consec"])
             )
             for i in range(len(self.coordinates))
         ]
@@ -277,3 +352,7 @@ class AnalysisService:
 
     def get_state(self):
         return [c.to_dict() for c in self.chambers]
+
+    def finalize(self):
+        for chamber in self.chambers:
+            chamber.finalize()
