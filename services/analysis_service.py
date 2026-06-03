@@ -2,8 +2,12 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import cv2
 import numpy as np
+
+try:
+    import cv2
+except ModuleNotFoundError:
+    cv2 = None
 
 
 def robust_std(x: np.ndarray) -> float:
@@ -25,6 +29,9 @@ def load_coordinates(coords_file: str):
 
 
 def analyze_green_intensity(img_path: str, coordinates, green_low, green_high, intensity_scale):
+    if cv2 is None:
+        raise RuntimeError("OpenCV is required for image analysis. Install python3-opencv or opencv-python.")
+
     img = cv2.imread(img_path)
     if img is None:
         raise FileNotFoundError(f"Cannot read image: {img_path}")
@@ -173,6 +180,28 @@ class ChamberState:
             slope = (self.corrected_all[-1] - self.corrected_all[-2]) / dt
         self.slope_all.append(slope)
 
+        self._update_detection_state(t_min, corrected, slope)
+
+    def update_corrected(self, t_min: float, corrected_value: float):
+        corrected = max(0.0, float(corrected_value))
+
+        self.t_all.append(float(t_min))
+        self.raw_all.append(corrected)
+        self.smooth_all.append(corrected)
+        self.baseline_all.append(0.0)
+        self.corrected_all.append(corrected)
+        self.corrected_display.append(corrected)
+
+        if len(self.corrected_all) < 2:
+            slope = 0.0
+        else:
+            dt = max(1e-9, self.t_all[-1] - self.t_all[-2])
+            slope = (self.corrected_all[-1] - self.corrected_all[-2]) / dt
+        self.slope_all.append(slope)
+
+        self._update_detection_state(t_min, corrected, slope)
+
+    def _update_detection_state(self, t_min: float, corrected: float, slope: float):
         if t_min < self.warmup_min:
             self.state = "WARMUP"
             self.status_text = "warm-up"
